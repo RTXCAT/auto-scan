@@ -54,7 +54,6 @@ get_resaults(){
 		echo -e "\n" >> ~/resault
 	done
 }
-echo "This script is use for auto-scan the host in your network,wait a moment, and check you home directory, there will have two files:resault and hostlists.The resault file gave you all the computer's IP、MAC、PORT、OS and so on;The hostlists file gave you a list of ip address so that you can use it in the Nessus"
 get_ip
 get_mask
 get_network
