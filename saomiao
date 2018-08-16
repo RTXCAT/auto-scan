@@ -1,0 +1,63 @@
+#!/bin/bash
+#获取IP地址
+get_ip(){
+	ip1=$(ifconfig eth0 | grep inet | head -n 1 | awk '{print $2}' | cut -d'.' -f1)
+	ip2=$(ifconfig eth0 | grep inet | head -n 1 | awk '{print $2}' | cut -d'.' -f2)
+	ip3=$(ifconfig eth0 | grep inet | head -n 1 | awk '{print $2}' | cut -d'.' -f3)
+	ip4=$(ifconfig eth0 | grep inet | head -n 1 | awk '{print $2}' | cut -d'.' -f4)
+}
+#获取掩码
+get_mask(){	
+	mask1=$(ifconfig eth0 | grep netmask | awk '{print $4}' | cut -d'.' -f1)
+	mask2=$(ifconfig eth0 | grep netmask | awk '{print $4}' | cut -d'.' -f2)
+	mask3=$(ifconfig eth0 | grep netmask | awk '{print $4}' | cut -d'.' -f3)
+	mask4=$(ifconfig eth0 | grep netmask | awk '{print $4}' | cut -d'.' -f4) 
+}
+#获取IP地址段
+get_network(){
+#IP和掩码做异或
+	net1=$(($ip1&$mask1))
+	net2=$(($ip2&$mask2))
+	net3=$(($ip3&$mask3))
+	net4=$(($ip4&$mask4))
+#网络地址段
+	net=$(echo $net1.$net2.$net3.$net4)
+	mask=$(ifconfig eth0 | grep netmask | awk '{print $4}' | awk -F "." '{print $1,$2,$3,$4}')
+}
+#for循环求出掩码长度
+get_mask_length(){
+	for i in $mask
+	do
+		while (($i!=0));do
+		     echo -n $(($i%2)) >> /tmp/mask
+		     i=$(($i/2))
+		     done
+	done
+	length=$(grep -o "1" /tmp/mask | wc -l)
+	rm -rf /tmp/mask
+}
+#开始扫描存活主机
+get_hostlist(){
+	nmap -sP $net/$length | grep -E "for|done" | awk '{print $5,$6}' > /tmp/resault
+}
+get_resaults(){
+#获取主机的数量
+	tail -n 1 /tmp/resault | cut -c12- > /tmp/count 
+	a=$(cat /tmp/count)
+#获取主机列表
+	cat /tmp/resault | grep -v "(" > ~/hostlists
+#for循环探测每个主机的操作系统
+	echo "There is $a hosts in your network" > ~/resault
+	for ip in $(cat ~/hostlists)
+	do
+		nmap -O $ip | grep -v 'exact\|detection' | grep -E "for|PORT|tcp|udp|MAC|CPE|Aggressive" >> ~/resault
+		echo -e "\n" >> ~/resault
+	done
+}
+get_ip
+get_mask
+get_network
+get_mask_length
+get_hostlist
+get_resaults
+rm -rf  /tmp/resault  /tmp/count 
